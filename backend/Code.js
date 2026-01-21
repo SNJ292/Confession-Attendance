@@ -168,7 +168,6 @@ function buildRosterForDateFromCalendar(dateStr) {
   }
 
   const result = { date: dateStrOut, count: rows.length };
-  Logger.log('buildRosterForDateFromCalendar result: ' + JSON.stringify(result));
   return result;
 }
 
@@ -278,7 +277,6 @@ function getRosterAndHistory(dateStr){
     historyDepth: depth
   };
 
-  Logger.log('getRosterAndHistory result: ' + JSON.stringify(result));
   return result;
 }
 
@@ -355,7 +353,6 @@ function getAttendanceDraft(dateStr) {
     out[key] = {status: norm, baptismalName};
   }
 
-  Logger.log('getAttendanceDraft for ' + dateStr + ': ' + JSON.stringify(out));
   return out;
 }
 
@@ -477,7 +474,6 @@ function saveAttendanceAndEmail(payload){
     absentCount: absents.length
   };
 
-  Logger.log('saveAttendanceAndEmail result: ' + JSON.stringify(result));
 
   // ✅ Clear draft after final submit so UI doesn't preload old draft
   clearAttendanceDraftForDate_(dateStr);
@@ -485,30 +481,29 @@ function saveAttendanceAndEmail(payload){
   return result;
 }
 
-function test_getRosterAndHistory(){
-  const cfg = getSettings_();
-  const tz = cfg.TIMEZONE;
-  const dateStr = Utilities.formatDate(nextOrThisSaturday_(tz), tz, 'yyyy-MM-dd');
-  const res = getRosterAndHistory(dateStr);
-  Logger.log(JSON.stringify(res, null, 2));
-}
+// TEST FUNCTION – DO NOT RUN AGAINST PRODUCTION DATA
+// function test_getRosterAndHistory(){
+//   const cfg = getSettings_();
+//   const tz = cfg.TIMEZONE;
+//   const dateStr = Utilities.formatDate(nextOrThisSaturday_(tz), tz, 'yyyy-MM-dd');
+//   const res = getRosterAndHistory(dateStr);
+// }
 
-function test_saveAttendanceAndEmail(){
-  const cfg = getSettings_();
-  const tz = cfg.TIMEZONE;
-  const dateStr = Utilities.formatDate(nextOrThisSaturday_(tz), tz, 'yyyy-MM-dd');
+// function test_saveAttendanceAndEmail(){
+//   const cfg = getSettings_();
+//   const tz = cfg.TIMEZONE;
+//   const dateStr = Utilities.formatDate(nextOrThisSaturday_(tz), tz, 'yyyy-MM-dd');
 
-  const payload = {
-    date: dateStr,
-    marked: [
-      { name: 'John Doe',  email: 'john@example.com', status: 'Present' },
-      { name: 'Mary Smith', email: 'mary@example.com', status: 'Absent' }
-    ]
-  };
+//   const payload = {
+//     date: dateStr,
+//     marked: [
+//       { name: 'John Doe',  email: 'john@example.com', status: 'Present' },
+//       { name: 'Mary Smith', email: 'mary@example.com', status: 'Absent' }
+//     ]
+//   };
 
-  const res = saveAttendanceAndEmail(payload);
-  Logger.log(JSON.stringify(res, null, 2));
-}
+//   const res = saveAttendanceAndEmail(payload);
+// }
 
 function doGet(e) {
   return HtmlService.createTemplateFromFile('Index')
