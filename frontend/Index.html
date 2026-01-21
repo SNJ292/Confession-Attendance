@@ -1,0 +1,519 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <style>
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        padding: 16px;
+      }
+      h2 { margin-top: 0; }
+
+      .topbar{
+        display:flex;
+        flex-wrap:wrap;
+        gap:12px;
+        align-items:center;
+        margin-bottom:16px;
+      }
+
+      .muted { color:#666; font-size:13px; }
+      .wrap { max-width: 1000px; }
+
+      .card{
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .nameLine{
+        display:flex;
+        align-items:baseline;
+        gap:8px;
+        flex-wrap:wrap;
+        font-size:16px;
+      }
+      .nameLine .name { font-weight: 700; }
+      .nameLine .email { color:#666; font-weight: 400; font-size: 13px; }
+
+      .line2{
+        margin-top: 10px;
+        display:flex;
+        gap: 12px;
+        align-items:center;
+        flex-wrap:wrap;
+      }
+
+      .statusPills{ display:flex; gap: 8px; }
+
+      .pill{
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        user-select:none;
+        font-size: 13px;
+        background: #fff;
+      }
+      .pill.active{
+        border-color:#222;
+        font-weight: 700;
+      }
+
+      .baptismInput{
+        width: 260px;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        font-size: 15px;
+      }
+
+      .historyRow{
+        margin-top: 10px;
+        font-size: 13px;
+        color:#666;
+      }
+
+      .statusDot{
+        display:inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      .presentDot{ background:#1a7f37; }
+      .absentDot{ background:#b3261e; }
+
+      .btn{
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #222;
+        background:#222;
+        color:#fff;
+        cursor:pointer;
+        font-size: 14px;
+      }
+      .btn.secondary{
+        background:#fff;
+        color:#222;
+      }
+      .btn:disabled{
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      #saveStatus { margin-left: 12px; font-size: 13px; color:#666; }
+
+      /* iPhone / touch devices */
+      @media (hover: none) and (pointer: coarse) {
+
+        /* Global scale */
+        body {
+          font-size: 24px;        /* ⬆️ main text */
+          line-height: 1.65;     /* ⬆️ vertical comfort */
+        }
+
+        h2 {
+          font-size: 50px;
+          margin-bottom: 12px;
+        }
+      
+        .topbar{
+          font-size: 40px;
+        }
+      .nameLine{
+        display:flex;
+        align-items:baseline;
+        gap:8px;
+        flex-wrap:wrap;
+        font-size:40px;
+      }
+      .nameLine .name { font-weight: 600; }
+      .nameLine .email { color:#666; font-weight: 400; font-size: 32px; }
+
+        /* Present / Absent pills */
+        .pill {
+          font-size: 30px;
+         // padding: 14px 16px;    /* ⬆️ tap target */
+        //  border-radius: 10px;
+          padding: 10px 14px;
+          border-radius: 999px;
+          border: 1px solid #ccc;    
+        }
+
+        /* Action buttons */
+        .btn {
+          font-size: 30px;
+          padding: 10px 14px;
+          border-radius: 10px;
+          border: 1px solid #222;        
+        }
+
+        /* Date picker */
+        input[type="date"] {
+          font-size: 30px;
+          padding: 10px 14px;
+          border-radius: 10px;
+          border: 1px solid #222;  
+        }
+
+        /* Baptism input */
+        .baptismInput {
+          width: 100%;
+          padding: 20px 16px;
+          border: 1px solid #ccc;
+          border-radius: 10px;
+          font-size: 30px;
+        }
+
+        /* History line */
+        .historyRow {
+          font-size: 27px;
+          margin-top: 12px;
+        }
+
+        .muted { color:#666; font-size:27px; }
+
+
+        .statusDot {
+          display:inline-block;
+          width: 13px; height: 13px;
+          border-radius: 50%;
+          margin-right: 6px;
+        }
+
+        /* Card spacing */
+        .person {
+          padding: 18px 0 22px 0;
+        }
+
+        .line-2 {
+          margin-top: 14px;
+          gap: 16px;
+        }
+      }
+    </style>
+
+    <!-- React (UMD) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel for JSX (Option 1) -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useEffect, useMemo, useState } = React;
+
+      function keyForPerson(p){
+        return String(p.email || p.name || '').trim().toLowerCase();
+      }
+
+      function fmtHistory(arr, depth){
+        if (!arr || !arr.length) return <span className="muted">—</span>;
+        return arr.slice(0, depth).map((h, idx) => {
+          const dotCls = h.status === 'Present' ? 'presentDot' : 'absentDot';
+          return (
+            <span key={idx}>
+              <span className={`statusDot ${dotCls}`}></span>
+              {h.date}
+              {idx < Math.min(depth, arr.length) - 1 ? '   ' : ''}
+            </span>
+          );
+        });
+      }
+
+      function App(){
+        const [dateInput, setDateInput] = useState('');
+        const [meta, setMeta] = useState('');
+        const [saveStatus, setSaveStatus] = useState('');
+
+        const [state, setState] = useState({
+          date: null,
+          historyDepth: 3,
+          people: [],
+          history: {},
+          marked: {},      // key -> Present/Absent
+          baptismal: {}    // key -> string
+        });
+
+        const [busy, setBusy] = useState({ loading:false, saving:false, drafting:false });
+
+        function loadRoster(chosenDate){
+          setBusy(b => ({...b, loading:true}));
+          setMeta('Loading...');
+          setSaveStatus('');
+
+          google.script.run
+            .withSuccessHandler((res) => {
+              const normalizedDate = res.date;
+
+              // If user hasn't picked a date yet, populate the input with backend's date (next Saturday default).
+              setDateInput(prev => prev ? prev : normalizedDate);
+
+              setState(s => ({
+                ...s,
+                date: normalizedDate,
+                people: res.people || [],
+                history: res.history || {},
+                historyDepth: res.historyDepth || 3,
+                // We'll fill marked/baptismal from draft next
+                marked: {},
+                baptismal: {}
+              }));
+
+              // Load draft AFTER roster, then render with preselects
+              google.script.run
+                .withSuccessHandler((draftMap) => {
+                  draftMap = draftMap || {};
+
+                  setState(s => {
+                    const marked = {};
+                    const baptismal = {};
+
+                    (s.people || []).forEach(p => {
+                      const key = keyForPerson(p);
+                      const item = draftMap[key];
+                      if (!item) return;
+
+                      // Expect object: { status, baptismalName }
+                      if (typeof item === 'object') {
+                        const st = String(item.status || '').trim();
+                        const bn = String(item.baptismalName || '').trim();
+
+                        if (st) {
+                          marked[key] =
+                            st.toLowerCase() === 'present' ? 'Present' :
+                            st.toLowerCase() === 'absent'  ? 'Absent'  :
+                            st;
+                        }
+                        if (bn) baptismal[key] = bn;
+                      } else if (typeof item === 'string') {
+                        const st = item.trim();
+                        if (st) {
+                          marked[key] =
+                            st.toLowerCase() === 'present' ? 'Present' :
+                            st.toLowerCase() === 'absent'  ? 'Absent'  :
+                            st;
+                        }
+                      }
+                    });
+
+                    return { ...s, marked, baptismal };
+                  });
+
+                  setMeta(`${(res.people || []).length} people`);
+                  setBusy(b => ({...b, loading:false}));
+                })
+                .withFailureHandler((err) => {
+                  console.error('getAttendanceDraft error:', err);
+                  setMeta(`${(res.people || []).length} people`);
+                  setBusy(b => ({...b, loading:false}));
+                })
+                .getAttendanceDraft(normalizedDate);
+            })
+            .withFailureHandler((err) => {
+              console.error('loadRoster error:', err);
+              setMeta('Error loading roster.');
+              setBusy(b => ({...b, loading:false}));
+            })
+            .getRosterAndHistory(chosenDate || null);
+        }
+
+        function toggleStatus(key, val){
+          setState(s => {
+            const next = { ...s.marked };
+            if (next[key] === val) delete next[key];
+            else next[key] = val;
+            return { ...s, marked: next };
+          });
+        }
+
+        
+
+        function setBaptismal(key, val){
+          setState(s => ({ ...s, baptismal: { ...s.baptismal, [key]: val } }));
+        }
+
+        function saveDraft(){
+          if (!state.date || !state.people.length){
+            setSaveStatus('Nothing to save (no roster loaded).');
+            return;
+          }
+          setBusy(b => ({...b, drafting:true}));
+          setSaveStatus('Saving draft...');
+
+          const payload = {
+            date: state.date,
+            marked: state.people.map(p => {
+              const key = keyForPerson(p);
+              return {
+                name: p.name,
+                email: p.email,
+                status: state.marked[key] || '', // keep blanks as blanks
+                baptismalName: state.baptismal[key] || ''
+              };
+            })
+          };
+
+          google.script.run
+            .withSuccessHandler((res) => {
+              setSaveStatus(`Draft saved (${res.saved}).`);
+              setBusy(b => ({...b, drafting:false}));
+              setTimeout(() => loadRoster(state.date), 400);
+            })
+            .withFailureHandler((err) => {
+              console.error('saveDraft error:', err);
+              setSaveStatus('Error saving draft.');
+              setBusy(b => ({...b, drafting:false}));
+            })
+            .saveAttendanceDraft(payload);
+        }
+
+        function saveAndEmail(){
+          if (!state.date || !state.people.length){
+            setSaveStatus('Nothing to save (no roster loaded).');
+            return;
+          }
+
+          const unselected = state.people.filter(p => !state.marked[keyForPerson(p)]);
+          if (unselected.length){
+            const names = unselected.map(p => p.name || p.email).join(', ');
+            setSaveStatus(`Please select Present/Absent for: ${names}`);
+            return;
+          }
+
+          const markedList = state.people.map(p => {
+            const key = keyForPerson(p);
+            return {
+              name: p.name,
+              email: p.email,
+              status: state.marked[key],
+              baptismalName: state.baptismal[key] || ''
+            };
+          });
+
+          const presentCount = markedList.filter(x => x.status === 'Present').length;
+          const absentCount  = markedList.filter(x => x.status === 'Absent').length;
+
+          const ok = window.confirm(
+            `You are about to save attendance for ${state.date}.\n\n` +
+            `Present: ${presentCount}\n` +
+            `Absent:  ${absentCount}\n\n` +
+            `This will also send emails.\n\n` +
+            `Do you want to continue?`
+          );
+          if (!ok){
+            setSaveStatus('Cancelled.');
+            return;
+          }
+
+          setBusy(b => ({...b, saving:true}));
+          setSaveStatus('Saving...');
+
+          google.script.run
+            .withSuccessHandler((res) => {
+              setSaveStatus(`Saved ${res.saved} • Present: ${res.presentCount} • Absent: ${res.absentCount} (emails sent).`);
+              setBusy(b => ({...b, saving:false}));
+              setTimeout(() => loadRoster(state.date), 600);
+            })
+            .withFailureHandler((err) => {
+              console.error('save error:', err);
+              setSaveStatus('Error saving attendance.');
+              setBusy(b => ({...b, saving:false}));
+            })
+            .saveAttendanceAndEmail({ date: state.date, marked: markedList });
+        }
+
+        useEffect(() => {
+          loadRoster(dateInput || null); // default to next Saturday
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+
+        function handleDateChange(e){
+          const newDate = e.target.value;
+          setDateInput(newDate);
+          loadRoster(newDate); // ✅ auto-load immediately
+        }
+
+        return (
+          <div className="wrap">
+            <h2>Confession Attendance</h2>
+
+            <div className="topbar">
+              <label htmlFor="date">Date:</label>
+              <input
+                id="date"
+                type="date"
+                value={dateInput}
+                onChange={handleDateChange}
+              />
+              <button className="btn secondary" onClick={() => loadRoster(dateInput)} disabled={busy.loading}>
+                Load roster
+              </button>
+              <span className="muted">{meta}</span>
+            </div>
+
+            <div>
+              {!state.people.length ? (
+                <p className="muted">No roster found for this date.</p>
+              ) : (
+                state.people.map((p, idx) => {
+                  const key = keyForPerson(p);
+                  const status = state.marked[key] || null;
+                  const presentCls = status === 'Present' ? 'pill active' : 'pill';
+                  const absentCls  = status === 'Absent'  ? 'pill active' : 'pill';
+                  const baptVal = state.baptismal[key] || '';
+
+                  return (
+                    <div className="card" key={idx}>
+                      <div className="nameLine">
+                        <span className="name">{p.name || '(No name)'}</span>
+                        {p.email ? <span className="email">&lt;{p.email}&gt;</span> : null}
+                      </div>
+
+                      <div className="line2">
+                        <div className="statusPills">
+                          <span className={presentCls} onClick={() => toggleStatus(key, 'Present')}>Present</span>
+                          <span className={absentCls}  onClick={() => toggleStatus(key, 'Absent')}>Absent</span>
+                        </div>
+
+                        <input
+                          className="baptismInput"
+                          type="text"
+                          placeholder="e.g., FikreMariam"
+                          value={baptVal}
+                          onChange={(e) => setBaptismal(key, e.target.value)}
+                        />
+                      </div>
+
+                      <div className="historyRow">
+                        <span className="muted">Last {state.historyDepth}:</span>{' '}
+                        {fmtHistory(state.history[key], state.historyDepth)}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <button className="btn" onClick={saveDraft} disabled={busy.drafting || busy.loading}>
+                Save Draft
+              </button>
+              <button className="btn" style={{ marginLeft: 10 }} onClick={saveAndEmail} disabled={busy.saving || busy.loading}>
+                Save &amp; Email
+              </button>
+              <span id="saveStatus">{saveStatus}</span>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
