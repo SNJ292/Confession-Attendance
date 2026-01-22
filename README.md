@@ -62,7 +62,7 @@ To use:
 
 | Desktop |
 |-------|
-| ![](screenshots/desktop.png) |
+| ![](frontend/ConfessionScreenshot.png) |
 
 ---
 
