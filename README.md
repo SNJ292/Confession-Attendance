@@ -60,9 +60,9 @@ To use:
 
 ## 📸 Screenshots
 
-| Desktop | Mobile |
-|-------|--------|
-| ![](screenshots/desktop.png) | ![](screenshots/mobile.png) |
+| Desktop |
+|-------|
+| ![](screenshots/desktop.png) |
 
 ---
 
