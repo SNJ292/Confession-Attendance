@@ -79,4 +79,4 @@ This project demonstrates:
 
 ## 🧑‍💻 Author
 
-Built and maintained by **[Samir Jaber]**  
+Built and maintained by **Samir Jaber**  
